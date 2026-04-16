@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyDay — Personal Productivity</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f0e8;
+  --bg2: #ede8dc;
+  --ink: #1a1612;
+  --ink2: #3d3830;
+  --muted: #8a8070;
+  --border: #d4cdc0;
+  --accent: #c4773a;
+  --accent2: #4a7c59;
+  --accent3: #6b5fa0;
+  --red: #c44a4a;
+  --surface: #faf7f2;
+  --surface2: #f0ebe0;
+  --shadow: 0 2px 12px rgba(26,22,18,0.08);
+  --shadow-lg: 0 8px 40px rgba(26,22,18,0.12);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Geist Mono', monospace;
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+/* Paper texture */
+body::before {
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(26,22,18,0.04) 27px, rgba(26,22,18,0.04) 28px);
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ── ONBOARDING ── */
+#onboarding {
+  position:fixed;inset:0;
+  background:var(--bg);
+  z-index:500;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:0;
+}
+
+.ob-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:48px 52px;
+  width:460px;
+  box-shadow:var(--shadow-lg);
+  position:relative;
+  animation: riseIn 0.5s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+@keyframes riseIn {
+  from { opacity:0; transform:translateY(24px) scale(0.96); }
+  to { opacity:1; transform:translateY(0) scale(1); }
+}
+
+.ob-eyebrow {
+  font-family:'Fraunces',serif;
+  font-style:italic;
+  color:var(--accent);
+  font-size:0.85rem;
+  margin-bottom:8px;
+  letter-spacing:0.04em;
+}
+
+.ob-title {
+  font-family:'Fraunces',serif;
+  font-size:2rem;
+  font-weight:700;
+  line-height:1.15;
+  color:var(--ink);
+  margin-bottom:6px;
+}
+
+.ob-sub {
+  color:var(--muted);
+  font-size:0.8rem;
+  line-height:1.6;
+  margin-bottom:32px;
+}
+
+.ob-label {
+  font-size:0.68rem;
+  text-transform:uppercase;
+  letter-spacing:0.12em;
+  color:var(--muted);
+  margin-bottom:8px;
+  display:block;
+}
+
+.ob-input {
+  width:100%;
+  background:var(--bg2);
+  border:1.5px solid var(--border);
+  border-radius:10px;
+  padding:13px 16px;
+  font-family:'Fraunces',serif;
+  font-size:1.1rem;
+  color:var(--ink);
+  outline:none;
+  transition:border-color 0.2s;
+  margin-bottom:20px;
+}
+.ob-input:focus { border-color:var(--accent); }
+.ob-input::placeholder { color:var(--border); }
+
+.ob-row { display:flex; gap:12px; margin-bottom:20px; }
+.ob-row .ob-input { margin-bottom:0; }
+
+.ob-btn {
+  width:100%;
+  background:var(--ink);
+  color:var(--bg);
+  border:none;
+  border-radius:10px;
+  padding:14px;
+  font-family:'Geist Mono',monospace;
+  font-size:0.82rem;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:all 0.2s;
+  margin-top:4px;
+}
+.ob-btn:hover { background:var(--accent); transform:translateY(-1px); box-shadow:0 4px 16px rgba(196,119,58,0.3); }
+
+/* ── APP SHELL ── */
+#app { display:none; position:relative; z-index:1; min-height:100vh; }
+
+/* Header */
+.app-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:16px 28px;
+  background:rgba(245,240,232,0.9);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  position:sticky;
+  top:0;
+  z-index:100;
+}
+
+.header-left { display:flex; align-items:center; gap:14px; }
+
+.greeting {
+  font-family:'Fraunces',serif;
+  font-size:1.05rem;
+  font-weight:600;
+  color:var(--ink);
+}
+
+.greeting span { color:var(--accent); font-style:italic; }
+
+.today-date {
+  font-size:0.72rem;
+  color:var(--muted);
+  border-left:1px solid var(--border);
+  padding-left:14px;
+  margin-left:4px;
+}
+
+.nav { display:flex; gap:4px; }
+
+.nav-btn {
+  background:transparent;
+  border:1px solid transparent;
+  border-radius:8px;
+  padding:7px 16px;
+  font-family:'Geist Mono',monospace;
+  font-size:0.72rem;
+  color:var(--muted);
+  cursor:pointer;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  transition:all 0.18s;
+}
+.nav-btn:hover { border-color:var(--border); color:var(--ink); }
+.nav-btn.active { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+
+.header-right { display:flex; align-items:center; gap:10px; }
+
+.live-clock {
+  font-family:'Fraunces',serif;
+  font-size:1rem;
+  font-style:italic;
+  color:var(--muted);
+}
+
+/* ── PAGES ── */
+.page { display:none; padding:28px; max-width:1100px; margin:0 auto; }
+.page.active { display:block; }
+
+/* ── TODAY PAGE ── */
+.today-grid {
+  display:grid;
+  grid-template-columns:1fr 380px;
+  gap:24px;
+  align-items:start;
+}
+
+/* Woke-up banner */
+.wakeup-banner {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:20px 24px;
+  margin-bottom:24px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  box-shadow:var(--shadow);
+}
+
+.wakeup-icon { font-size:1.6rem; }
+
+.wakeup-set { flex:1; }
+.wakeup-label { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:4px; }
+.wakeup-time { font-family:'Fraunces',serif; font-size:1.5rem; font-weight:700; color:var(--ink); }
+.wakeup-note { font-size:0.75rem; color:var(--muted); margin-top:2px; }
+
+.wakeup-input-row { display:flex; gap:10px; flex:1; align-items:center; }
+.small-input {
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:8px 12px;
+  font-family:'Geist Mono',monospace;
+  font-size:0.82rem;
+  color:var(--ink);
+  outline:none;
+  transition:border-color 0.2s;
+}
+.small-input:focus { border-color:var(--accent); }
+
+.mini-btn {
+  background:var(--accent);
+  color:white;
+  border:none;
+  border-radius:8px;
+  padding:8px 16px;
+  font-family:'Geist Mono',monospace;
+  font-size:0.72rem;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  cursor:pointer;
+  transition:all 0.18s;
+  white-space:nowrap;
+}
+.mini-btn:hover { opacity:0.85; transform:translateY(-1px); }
+
+.mini-btn.green { background:var(--accent2); }
+.mini-btn.purple { background:var(--accent3); }
+.mini-btn.danger { background:var(--red); }
+
+/* Targets panel */
+.panel {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:22px;
+  box-shadow:var(--shadow);
+  margin-bottom:20px;
+}
+
+.panel-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:18px;
+}
+
+.panel-title {
+  font-family:'Fraunces',serif;
+  font-size:1rem;
+  font-weight:600;
+  color:var(--ink);
+}
+
+.panel-sub { font-size:0.7rem; color:var(--muted); margin-top:1px; }
+
+/* Target item */
+.target-item {
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  padding:12px;
+  border-radius:10px;
+  margin-bottom:8px;
+  border:1px solid transparent;
+  transition:all 0.2s;
+  cursor:pointer;
+  background:var(--bg2);
+}
+
+.target-item:hover { border-color:var(--border); }
+.target-item.done { opacity:0.6; }
+.target-item.done .target-name { text-decoration:line-through; color:var(--muted); }
+
+.target-check {
+  width:20px; height:20px;
+  border:2px solid var(--border);
+  border-radius:6px;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:0.7rem;
+  transition:all 0.18s;
+  margin-top:1px;
+}
+
+.target-item.done .target-check { background:var(--accent2); border-color:var(--accent2); color:white; }
+
+.target-body { flex:1; }
+.target-name { font-size:0.82rem; font-weight:500; color:var(--ink); margin-bottom:3px; }
+.target-meta { font-size:0.68rem; color:var(--muted); display:flex; gap:12px; flex-wrap:wrap; }
+.target-tag { padding:1px 8px; border-radius:20px; font-size:0.62rem; }
+
+.target-actions { display:flex; gap:6px; opacity:0; transition:opacity 0.18s; }
+.target-item:hover .target-actions { opacity:1; }
+.target-actions button { background:transparent; border:none; cursor:pointer; font-size:0.75rem; color:var(--muted); padding:2px 4px; border-radius:4px; }
+.target-actions button:hover { color:var(--red); }
+
+/* Add target form */
+.add-target-form {
+  display:none;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:16px;
+  margin-top:12px;
+  gap:10px;
+  flex-direction:column;
+}
+.add-target-form.open { display:flex; }
+.form-row { display:flex; gap:10px; }
+.form-input {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:9px 12px;
+  font-family:'Geist Mono',monospace;
+  font-size:0.8rem;
+  color:var(--ink);
+  outline:none;
+  flex:1;
+  transition:border-color 0.2s;
+}
+.form-input:focus { border-color:var(--accent); }
+.form-textarea {
+  resize:vertical;
+  min-height:60px;
+  font-family:'Geist Mono',monospace;
+  font-size:0.8rem;
+}
+
+/* Session log */
+.session-item {
+  background:var(--bg2);
+  border-radius:10px;
+  padding:14px;
+  margin-bottom:10px;
+  border-left:3px solid var(--accent);
+  position:relative;
+}
+
+.session-item.break { border-left-color:var(--accent2); }
+.session-item.leisure { border-left-color:var(--accent3); }
+.session-item.other { border-left-color:var(--muted); }
+
+.session-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.session-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); }
+.session-title { font-size:0.88rem; font-weight:500; color:var(--ink); margin:2px 0 5px; }
+.session-detail { font-size:0.75rem; color:var(--muted); line-height:1.5; }
+.session-learning { font-size:0.75rem; color:var(--accent2); margin-top:6px; font-style:italic; }
+.session-time { font-size:0.72rem; color:var(--muted); white-space:nowrap; }
+.session-duration { font-family:'Fraunces',serif; font-weight:600; color:var(--accent); font-size:0.9rem; }
+
+.del-btn { background:transparent; border:none; cursor:pointer; color:var(--border); font-size:0.75rem; padding:2px 4px; border-radius:4px; transition:color 0.18s; }
+.del-btn:hover { color:var(--red); }
+
+/* Timeline sidebar */
+.timeline { position:relative; }
+.timeline-line {
+  position:absolute;
+  left:12px; top:0; bottom:0;
+  width:1px;
+  background:var(--border);
+}
+.tl-item { display:flex; gap:14px; margin-bottom:16px; position:relative; }
+.tl-dot {
+  width:25px; height:25px;
+  border-radius:50%;
+  background:var(--surface);
+  border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.6rem;
+  flex-shrink:0;
+  z-index:1;
+}
+.tl-dot.study { border-color:var(--accent); background:var(--accent); color:white; }
+.tl-dot.break { border-color:var(--accent2); background:var(--accent2); color:white; }
+.tl-dot.leisure { border-color:var(--accent3); background:var(--accent3); color:white; }
+.tl-dot.wake { border-color:var(--ink); background:var(--ink); color:var(--bg); }
+
+.tl-content { flex:1; padding-top:2px; }
+.tl-time { font-size:0.65rem; color:var(--muted); }
+.tl-title { font-size:0.78rem; font-weight:500; }
+.tl-dur { font-size:0.68rem; color:var(--accent); }
+
+/* Progress ring */
+.progress-ring-wrap { display:flex; gap:16px; justify-content:space-around; margin-bottom:16px; }
+.ring-item { text-align:center; }
+.ring-label { font-size:0.65rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-top:6px; }
+.ring-val { font-family:'Fraunces',serif; font-weight:700; font-size:0.9rem; }
+
+svg.ring { transform:rotate(-90deg); }
+.ring-track { fill:none; stroke:var(--bg2); stroke-width:5; }
+.ring-fill { fill:none; stroke-width:5; stroke-linecap:round; transition:stroke-dashoffset 1s cubic-bezier(.34,1.56,.64,1); }
+
+/* ── HISTORY PAGE ── */
+.history-filters { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+.filter-btn { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:6px 14px; font-family:'Geist Mono',monospace; font-size:0.72rem; cursor:pointer; color:var(--muted); transition:all 0.18s; }
+.filter-btn.active { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+
+.history-day { margin-bottom:28px; }
+.history-day-title { font-family:'Fraunces',serif; font-size:0.9rem; font-weight:600; color:var(--muted); margin-bottom:12px; display:flex; align-items:center; gap:10px; }
+.history-day-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* ── STATS PAGE ── */
+.stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
+.stat-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+  box-shadow:var(--shadow);
+}
+.stat-icon { font-size:1.4rem; margin-bottom:10px; }
+.stat-val { font-family:'Fraunces',serif; font-size:1.8rem; font-weight:700; color:var(--ink); }
+.stat-label { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-top:2px; }
+
+.heatmap { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-top:10px; }
+.hm-cell { aspect-ratio:1; border-radius:4px; background:var(--bg2); transition:background 0.2s; cursor:default; position:relative; }
+.hm-cell:hover::after { content:attr(title); position:absolute; bottom:calc(100%+4px); left:50%; transform:translateX(-50%); background:var(--ink); color:var(--bg); font-size:0.62rem; padding:3px 8px; border-radius:6px; white-space:nowrap; z-index:10; pointer-events:none; }
+
+/* Modal */
+.modal-bg { display:none; position:fixed; inset:0; background:rgba(26,22,18,0.5); backdrop-filter:blur(4px); z-index:300; align-items:center; justify-content:center; }
+.modal-bg.open { display:flex; }
+.modal { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:32px; width:480px; max-width:95vw; box-shadow:var(--shadow-lg); animation:riseIn 0.25s cubic-bezier(.34,1.56,.64,1) both; }
+.modal-title { font-family:'Fraunces',serif; font-size:1.2rem; font-weight:700; margin-bottom:4px; }
+.modal-sub { font-size:0.75rem; color:var(--muted); margin-bottom:22px; }
+.modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+.btn-cancel { background:transparent; border:1px solid var(--border); border-radius:8px; padding:9px 20px; font-family:'Geist Mono',monospace; font-size:0.78rem; cursor:pointer; color:var(--muted); }
+.btn-save { background:var(--ink); color:var(--bg); border:none; border-radius:8px; padding:9px 20px; font-family:'Geist Mono',monospace; font-size:0.78rem; cursor:pointer; transition:all 0.18s; }
+.btn-save:hover { background:var(--accent); }
+
+.form-label { font-size:0.66rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:6px; display:block; }
+.form-group { margin-bottom:14px; }
+.form-select { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-family:'Geist Mono',monospace; font-size:0.8rem; color:var(--ink); outline:none; }
+.form-select:focus { border-color:var(--accent); }
+
+/* Completion modal */
+.done-modal { max-width:420px; text-align:center; }
+.done-emoji { font-size:3rem; margin-bottom:12px; }
+
+/* Empty state */
+.empty { text-align:center; padding:40px 20px; color:var(--muted); font-size:0.8rem; }
+.empty-icon { font-size:2rem; margin-bottom:10px; }
+
+/* Toast */
+.toast { position:fixed; bottom:24px; right:24px; background:var(--ink); color:var(--bg); border-radius:10px; padding:12px 20px; font-size:0.8rem; z-index:999; opacity:0; transform:translateY(8px); transition:all 0.3s; pointer-events:none; }
+.toast.show { opacity:1; transform:translateY(0); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+/* Tags */
+.tag-study { background:#c4773a22; color:var(--accent); }
+.tag-break { background:#4a7c5922; color:var(--accent2); }
+.tag-leisure { background:#6b5fa022; color:var(--accent3); }
+.tag-other { background:#8a807022; color:var(--muted); }
+
+@media(max-width:768px) {
+  .today-grid { grid-template-columns:1fr; }
+  .stats-grid { grid-template-columns:repeat(2,1fr); }
+  .ob-card { width:95vw; padding:32px 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── ONBOARDING ── -->
+<div id="onboarding">
+  <div class="ob-card">
+    <div class="ob-eyebrow">Welcome to</div>
+    <div class="ob-title">MyDay</div>
+    <p class="ob-sub">Your personal daily tracker — log what you do, how long it takes, what you learned, and hit your goals. Everything stays on your device.</p>
+    <label class="ob-label">Your name</label>
+    <input class="ob-input" id="obName" placeholder="e.g. Rahul" maxlength="32">
+    <label class="ob-label">Daily study goal (hours)</label>
+    <div class="ob-row">
+      <input class="ob-input" id="obStudyGoal" type="number" min="1" max="16" placeholder="6" style="flex:1">
+      <input class="ob-input" id="obWakeGoal" type="time" placeholder="07:00" style="flex:1" value="07:00">
+    </div>
+    <div style="font-size:0.68rem;color:var(--muted);margin-top:-14px;margin-bottom:18px">Study hrs/day &nbsp;·&nbsp; Usual wake-up time</div>
+    <button class="ob-btn" onclick="finishOnboard()">Start tracking →</button>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app">
+  <header class="app-header">
+    <div class="header-left">
+      <div class="greeting">Good <span id="timeOfDay">morning</span>, <span id="userName">—</span></div>
+      <div class="today-date" id="headerDate"></div>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" onclick="showPage('today',this)">Today</button>
+      <button class="nav-btn" onclick="showPage('history',this)">History</button>
+      <button class="nav-btn" onclick="showPage('stats',this)">Stats</button>
+    </nav>
+    <div class="header-right">
+      <div class="live-clock" id="liveClock"></div>
+    </div>
+  </header>
+
+  <!-- TODAY -->
+  <div id="page-today" class="page active">
+    <div class="today-grid">
+      <!-- Left col -->
+      <div>
+        <!-- Wake-up -->
+        <div class="wakeup-banner" id="wakeupBanner"></div>
+
+        <!-- Targets -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Today's Targets</div>
+              <div class="panel-sub" id="targetProgress"></div>
+            </div>
+            <button class="mini-btn" onclick="toggleAddTarget()">+ Add</button>
+          </div>
+          <div id="targetList"></div>
+          <div class="add-target-form" id="addTargetForm">
+            <input class="form-input" id="tName" placeholder="Target name (e.g. Finish Chapter 5)">
+            <div class="form-row">
+              <select class="form-input" id="tCategory">
+                <option value="study">📚 Study</option>
+                <option value="exercise">🏃 Exercise</option>
+                <option value="reading">📖 Reading</option>
+                <option value="project">💡 Project</option>
+                <option value="chore">🧹 Chore</option>
+                <option value="other">✨ Other</option>
+              </select>
+              <input class="form-input" id="tEstMins" type="number" placeholder="Est. mins" min="1">
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="mini-btn green" onclick="addTarget()" style="flex:1">Save target</button>
+              <button class="mini-btn" onclick="toggleAddTarget()" style="background:var(--border);color:var(--ink)">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Log session -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Log a Session</div>
+              <div class="panel-sub">What have you been doing?</div>
+            </div>
+            <button class="mini-btn purple" onclick="openLogModal()">+ Log</button>
+          </div>
+          <div id="sessionList"></div>
+        </div>
+      </div>
+
+      <!-- Right col: timeline + rings -->
+      <div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Progress Rings</div></div>
+          <div class="progress-ring-wrap" id="rings"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Day Timeline</div></div>
+          <div class="timeline">
+            <div class="timeline-line"></div>
+            <div id="timeline"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="page-history" class="page">
+    <div class="panel-title" style="font-family:'Fraunces',serif;font-size:1.3rem;margin-bottom:6px">History</div>
+    <p style="color:var(--muted);font-size:0.78rem;margin-bottom:20px">Every session and target you've logged.</p>
+    <div class="history-filters">
+      <button class="filter-btn active" onclick="filterHistory('all',this)">All</button>
+      <button class="filter-btn" onclick="filterHistory('study',this)">📚 Study</button>
+      <button class="filter-btn" onclick="filterHistory('break',this)">☕ Break</button>
+      <button class="filter-btn" onclick="filterHistory('leisure',this)">🎮 Leisure</button>
+    </div>
+    <div id="historyContent"></div>
+  </div>
+
+  <!-- STATS -->
+  <div id="page-stats" class="page">
+    <div class="panel-title" style="font-family:'Fraunces',serif;font-size:1.3rem;margin-bottom:6px">Your Stats</div>
+    <p style="color:var(--muted);font-size:0.78rem;margin-bottom:20px">All-time productivity overview.</p>
+    <div class="stats-grid" id="statsGrid"></div>
+    <div class="panel">
+      <div class="panel-title" style="margin-bottom:16px">Activity Heatmap (last 49 days)</div>
+      <div style="display:flex;gap:4px;margin-bottom:6px">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;width:100%;" id="heatmapLabels"></div>
+      </div>
+      <div class="heatmap" id="heatmap"></div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <div class="panel-title" style="margin-bottom:16px">Subject Breakdown</div>
+      <div id="subjectBreakdown"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Log Session Modal -->
+<div class="modal-bg" id="logModal">
+  <div class="modal">
+    <div class="modal-title">Log a Session</div>
+    <div class="modal-sub">Record what you did, how long, and what you learned.</div>
+    <div class="form-group">
+      <label class="form-label">What did you do?</label>
+      <input class="form-input" id="lTitle" placeholder="e.g. Studied Organic Chemistry Ch.4" style="width:100%">
+    </div>
+    <div class="form-row" style="gap:12px;margin-bottom:14px">
+      <div class="form-group" style="flex:1;margin-bottom:0">
+        <label class="form-label">Category</label>
+        <select class="form-select" id="lCategory">
+          <option value="study">📚 Study</option>
+          <option value="break">☕ Break</option>
+          <option value="leisure">🎮 Leisure</option>
+          <option value="exercise">🏃 Exercise</option>
+          <option value="other">✨ Other</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1;margin-bottom:0">
+        <label class="form-label">Duration (mins)</label>
+        <input class="form-input" id="lDuration" type="number" min="1" placeholder="45" style="width:100%">
+      </div>
+    </div>
+    <div class="form-row" style="gap:12px;margin-bottom:14px">
+      <div class="form-group" style="flex:1;margin-bottom:0">
+        <label class="form-label">Start time</label>
+        <input class="form-input" id="lStart" type="time" style="width:100%">
+      </div>
+      <div class="form-group" style="flex:1;margin-bottom:0">
+        <label class="form-label">Focus (1–10)</label>
+        <input class="form-input" id="lFocus" type="number" min="1" max="10" placeholder="7" style="width:100%">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes / details</label>
+      <textarea class="form-input form-textarea" id="lNotes" placeholder="What did you cover? Any blockers?"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">What did you learn? 💡</label>
+      <textarea class="form-input form-textarea" id="lLearning" placeholder="Key takeaway or insight from this session..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeLogModal()">Cancel</button>
+      <button class="btn-save" onclick="saveSession()">Save Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- Complete Target Modal -->
+<div class="modal-bg" id="completeModal">
+  <div class="modal done-modal">
+    <div class="done-emoji">🎯</div>
+    <div class="modal-title">Mark as Done?</div>
+    <div class="modal-sub">Add details about how it went.</div>
+    <div class="form-group">
+      <label class="form-label">Actual time taken (mins)</label>
+      <input class="form-input" id="cTimeTaken" type="number" min="1" placeholder="60" style="width:100%">
+    </div>
+    <div class="form-group">
+      <label class="form-label">What did you learn / accomplish?</label>
+      <textarea class="form-input form-textarea" id="cLearning" placeholder="Key takeaway from completing this..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeCompleteModal()">Cancel</button>
+      <button class="btn-save" onclick="confirmComplete()">Mark Done ✓</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+let state = JSON.parse(localStorage.getItem('myday_state') || 'null') || {
+  user: null,
+  studyGoalHrs: 6,
+  wakeGoalTime: '07:00',
+  days: {}  // keyed by YYYY-MM-DD
+};
+
+function save() { localStorage.setItem('myday_state', JSON.stringify(state)); }
+
+function todayKey() { return new Date().toISOString().split('T')[0]; }
+
+function getDay(key) {
+  if(!state.days[key]) state.days[key] = { wakeTime:null, wakeMood:null, targets:[], sessions:[] };
+  return state.days[key];
+}
+
+function today() { return getDay(todayKey()); }
+
+// ── ONBOARDING ──
+function finishOnboard() {
+  const name = document.getElementById('obName').value.trim();
+  if(!name) { showToast('Please enter your name'); return; }
+  state.user = name;
+  state.studyGoalHrs = parseFloat(document.getElementById('obStudyGoal').value) || 6;
+  state.wakeGoalTime = document.getElementById('obWakeGoal').value || '07:00';
+  save();
+  bootApp();
+}
+
+// ── BOOT ──
+function bootApp() {
+  if(!state.user) return;
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('userName').textContent = state.user;
+  document.getElementById('headerDate').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  updateClock();
+  setInterval(updateClock, 1000);
+  renderAll();
+}
+
+function updateClock() {
+  const now = new Date();
+  const h = now.getHours();
+  document.getElementById('timeOfDay').textContent = h<12?'morning':h<17?'afternoon':'evening';
+  document.getElementById('liveClock').textContent = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── RENDER ALL ──
+function renderAll() {
+  renderWakeup();
+  renderTargets();
+  renderSessions();
+  renderRings();
+  renderTimeline();
+}
+
+// ── WAKE UP ──
+function renderWakeup() {
+  const d = today();
+  const banner = document.getElementById('wakeupBanner');
+  if(d.wakeTime) {
+    banner.innerHTML = `
+      <div class="wakeup-icon">🌅</div>
+      <div class="wakeup-set">
+        <div class="wakeup-label">Woke up at</div>
+        <div class="wakeup-time">${d.wakeTime}</div>
+        ${d.wakeMood ? `<div class="wakeup-note">${d.wakeMood}</div>` : ''}
+      </div>
+      <button class="mini-btn danger" style="margin-left:auto" onclick="clearWakeup()">Reset</button>
+    `;
+  } else {
+    banner.innerHTML = `
+      <div class="wakeup-icon">⏰</div>
+      <div style="flex:1">
+        <div class="wakeup-label">Log your wake-up time</div>
+        <div class="wakeup-input-row">
+          <input class="small-input" id="wakeTimeInput" type="time" value="${new Date().toTimeString().slice(0,5)}">
+          <input class="small-input" id="wakeMoodInput" placeholder="How are you feeling?" style="flex:2">
+          <button class="mini-btn" onclick="logWakeup()">Log</button>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function logWakeup() {
+  const t = document.getElementById('wakeTimeInput')?.value;
+  const m = document.getElementById('wakeMoodInput')?.value;
+  if(!t) return;
+  const d = today();
+  d.wakeTime = t; d.wakeMood = m;
+  save(); renderAll(); showToast('Wake-up logged! 🌅');
+}
+
+function clearWakeup() {
+  const d = today(); d.wakeTime = null; d.wakeMood = null;
+  save(); renderAll();
+}
+
+// ── TARGETS ──
+let addTargetOpen = false;
+function toggleAddTarget() {
+  addTargetOpen = !addTargetOpen;
+  document.getElementById('addTargetForm').classList.toggle('open', addTargetOpen);
+  if(addTargetOpen) document.getElementById('tName').focus();
+}
+
+function addTarget() {
+  const name = document.getElementById('tName').value.trim();
+  if(!name) { showToast('Enter a target name'); return; }
+  today().targets.push({
+    id: Date.now(),
+    name,
+    category: document.getElementById('tCategory').value,
+    estMins: parseInt(document.getElementById('tEstMins').value)||null,
+    done: false,
+    timeTaken: null,
+    learning: null,
+    doneAt: null
+  });
+  save();
+  document.getElementById('tName').value='';
+  document.getElementById('tEstMins').value='';
+  toggleAddTarget();
+  renderTargets(); renderRings();
+  showToast('Target added!');
+}
+
+let completingTarget = null;
+function openCompleteModal(id) {
+  completingTarget = id;
+  document.getElementById('cTimeTaken').value='';
+  document.getElementById('cLearning').value='';
+  document.getElementById('completeModal').classList.add('open');
+}
+function closeCompleteModal() { document.getElementById('completeModal').classList.remove('open'); completingTarget=null; }
+
+function confirmComplete() {
+  const d = today();
+  const t = d.targets.find(x=>x.id===completingTarget);
+  if(!t) return;
+  t.done = true;
+  t.timeTaken = parseInt(document.getElementById('cTimeTaken').value)||null;
+  t.learning = document.getElementById('cLearning').value.trim();
+  t.doneAt = new Date().toTimeString().slice(0,5);
+  save(); closeCompleteModal(); renderAll(); showToast('Target complete! 🎯');
+}
+
+function uncompleteTarget(id) {
+  const t = today().targets.find(x=>x.id===id);
+  if(t) { t.done=false; t.timeTaken=null; t.learning=null; t.doneAt=null; save(); renderAll(); }
+}
+
+function deleteTarget(id) {
+  const d = today();
+  d.targets = d.targets.filter(x=>x.id!==id);
+  save(); renderAll();
+}
+
+function renderTargets() {
+  const d = today();
+  const list = document.getElementById('targetList');
+  const total = d.targets.length;
+  const done = d.targets.filter(x=>x.done).length;
+  document.getElementById('targetProgress').textContent = total ? `${done}/${total} done` : 'No targets yet';
+
+  if(!total) { list.innerHTML='<div class="empty"><div class="empty-icon">🎯</div>Add your targets for today!</div>'; return; }
+
+  const catIcon = {study:'📚',exercise:'🏃',reading:'📖',project:'💡',chore:'🧹',other:'✨'};
+
+  list.innerHTML = d.targets.map(t => `
+    <div class="target-item ${t.done?'done':''}" onclick="handleTargetClick(${t.id},event)">
+      <div class="target-check">${t.done?'✓':''}</div>
+      <div class="target-body">
+        <div class="target-name">${catIcon[t.category]||'✨'} ${t.name}</div>
+        <div class="target-meta">
+          ${t.estMins?`<span>Est. ${t.estMins}min</span>`:''}
+          ${t.done&&t.timeTaken?`<span style="color:var(--accent2)">Took ${t.timeTaken}min</span>`:''}
+          ${t.done&&t.doneAt?`<span>Done at ${t.doneAt}</span>`:''}
+          ${t.done&&t.learning?`<span style="color:var(--accent2);font-style:italic">💡 ${t.learning}</span>`:''}
+        </div>
+      </div>
+      <div class="target-actions">
+        ${t.done?`<button title="Unmark" onclick="uncompleteTarget(${t.id})">↩</button>`:''}
+        <button title="Delete" onclick="deleteTarget(${t.id})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function handleTargetClick(id, e) {
+  if(e.target.closest('.target-actions')) return;
+  const t = today().targets.find(x=>x.id===id);
+  if(!t) return;
+  if(t.done) uncompleteTarget(id);
+  else openCompleteModal(id);
+}
+
+// ── SESSIONS ──
+function openLogModal() {
+  document.getElementById('lStart').value = new Date().toTimeString().slice(0,5);
+  document.getElementById('lTitle').value='';
+  document.getElementById('lDuration').value='';
+  document.getElementById('lNotes').value='';
+  document.getElementById('lLearning').value='';
+  document.getElementById('lFocus').value='';
+  document.getElementById('logModal').classList.add('open');
+}
+function closeLogModal() { document.getElementById('logModal').classList.remove('open'); }
+
+function saveSession() {
+  const title = document.getElementById('lTitle').value.trim();
+  const duration = parseInt(document.getElementById('lDuration').value);
+  if(!title || !duration) { showToast('Fill in title and duration'); return; }
+  today().sessions.push({
+    id: Date.now(),
+    title,
+    category: document.getElementById('lCategory').value,
+    duration,
+    startTime: document.getElementById('lStart').value,
+    focus: parseInt(document.getElementById('lFocus').value)||null,
+    notes: document.getElementById('lNotes').value.trim(),
+    learning: document.getElementById('lLearning').value.trim(),
+    ts: Date.now()
+  });
+  save(); closeLogModal(); renderAll(); showToast('Session logged! ✅');
+}
+
+function deleteSession(id) {
+  const d = today();
+  d.sessions = d.sessions.filter(x=>x.id!==id);
+  save(); renderAll();
+}
+
+function renderSessions() {
+  const d = today();
+  const list = document.getElementById('sessionList');
+  const sorted = [...d.sessions].sort((a,b)=>(a.startTime||'').localeCompare(b.startTime||''));
+  if(!sorted.length) { list.innerHTML='<div class="empty"><div class="empty-icon">📝</div>No sessions yet today.</div>'; return; }
+
+  const catColor = {study:'study',break:'break',leisure:'leisure',exercise:'study',other:'other'};
+  const catLabel = {study:'Study',break:'Break',leisure:'Leisure',exercise:'Exercise',other:'Other'};
+
+  list.innerHTML = sorted.map(s => `
+    <div class="session-item ${catColor[s.category]||'other'}">
+      <div class="session-top">
+        <div>
+          <div class="session-label">${catLabel[s.category]||s.category}${s.startTime?' · '+s.startTime:''}</div>
+          <div class="session-title">${s.title}</div>
+          <div class="session-detail">
+            <span class="session-duration">${s.duration}min</span>
+            ${s.focus?` &nbsp;·&nbsp; Focus ${s.focus}/10`:''}
+            ${s.notes?` &nbsp;·&nbsp; ${s.notes}`:''}
+          </div>
+          ${s.learning?`<div class="session-learning">💡 ${s.learning}</div>`:''}
+        </div>
+        <button class="del-btn" onclick="deleteSession(${s.id})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── PROGRESS RINGS ──
+function renderRings() {
+  const d = today();
+  const studyMins = d.sessions.filter(s=>s.category==='study'||s.category==='exercise').reduce((a,b)=>a+b.duration,0);
+  const studyGoalMins = state.studyGoalHrs * 60;
+  const studyPct = Math.min(1, studyMins/studyGoalMins);
+
+  const tTotal = d.targets.length;
+  const tDone = d.targets.filter(x=>x.done).length;
+  const tPct = tTotal ? tDone/tTotal : 0;
+
+  const sessions = d.sessions.length;
+  const sessionPct = Math.min(1, sessions/5);
+
+  const rings = [
+    { label:'Study Time', val:`${Math.round(studyMins/60*10)/10}h / ${state.studyGoalHrs}h`, pct:studyPct, color:'#c4773a' },
+    { label:'Targets', val:`${tDone}/${tTotal}`, pct:tPct, color:'#4a7c59' },
+    { label:'Sessions', val:`${sessions}`, pct:sessionPct, color:'#6b5fa0' }
+  ];
+
+  const r = 26, circ = 2*Math.PI*r;
+  document.getElementById('rings').innerHTML = rings.map(ring => `
+    <div class="ring-item">
+      <svg width="64" height="64" class="ring" viewBox="0 0 64 64">
+        <circle class="ring-track" cx="32" cy="32" r="${r}"/>
+        <circle class="ring-fill" cx="32" cy="32" r="${r}"
+          stroke="${ring.color}"
+          stroke-dasharray="${circ}"
+          stroke-dashoffset="${circ*(1-ring.pct)}"
+        />
+      </svg>
+      <div class="ring-val" style="color:${ring.color}">${ring.val}</div>
+      <div class="ring-label">${ring.label}</div>
+    </div>
+  `).join('');
+}
+
+// ── TIMELINE ──
+function renderTimeline() {
+  const d = today();
+  const items = [];
+
+  if(d.wakeTime) items.push({ time:d.wakeTime, type:'wake', title:'Woke up', sub: d.wakeMood||'' });
+
+  d.sessions.forEach(s => {
+    if(s.startTime) items.push({ time:s.startTime, type:s.category==='break'?'break':s.category==='leisure'?'leisure':'study', title:s.title, sub:`${s.duration}min` });
+  });
+
+  d.targets.filter(t=>t.done&&t.doneAt).forEach(t => {
+    items.push({ time:t.doneAt, type:'break', title:`✓ ${t.name}`, sub:t.timeTaken?`${t.timeTaken}min`:'done' });
+  });
+
+  items.sort((a,b)=>a.time.localeCompare(b.time));
+
+  const tl = document.getElementById('timeline');
+  if(!items.length) { tl.innerHTML='<div class="empty" style="padding:20px 0">Your day will appear here.</div>'; return; }
+
+  tl.innerHTML = items.map(item => `
+    <div class="tl-item">
+      <div class="tl-dot ${item.type}">${item.type==='wake'?'☀':item.type==='break'?'☕':item.type==='leisure'?'🎮':'📚'}</div>
+      <div class="tl-content">
+        <div class="tl-time">${item.time}</div>
+        <div class="tl-title">${item.title}</div>
+        ${item.sub?`<div class="tl-dur">${item.sub}</div>`:''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── HISTORY PAGE ──
+let historyFilter = 'all';
+function filterHistory(f, btn) {
+  historyFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderHistory();
+}
+
+function renderHistory() {
+  const content = document.getElementById('historyContent');
+  const days = Object.keys(state.days).sort().reverse();
+  if(!days.length) { content.innerHTML='<div class="empty"><div class="empty-icon">📅</div>No history yet.</div>'; return; }
+
+  const catColor={study:'study',break:'break',leisure:'leisure',exercise:'study',other:'other'};
+  const catLabel={study:'Study',break:'Break',leisure:'Leisure',exercise:'Exercise',other:'Other'};
+
+  let html = '';
+  for(const dk of days) {
+    const d = state.days[dk];
+    let sessions = d.sessions||[];
+    if(historyFilter!=='all') sessions = sessions.filter(s=>s.category===historyFilter);
+    const targets = d.targets||[];
+
+    if(!sessions.length && historyFilter!=='all') continue;
+
+    const label = dk===todayKey()?'Today':new Date(dk+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+    const totalMins = sessions.reduce((a,b)=>a+b.duration,0);
+    const doneTasks = targets.filter(t=>t.done).length;
+
+    html += `<div class="history-day">
+      <div class="history-day-title">${label} <span style="font-size:0.72rem;font-weight:400">${totalMins?Math.round(totalMins/60*10)/10+'h':''} ${doneTasks?'· '+doneTasks+' tasks':''}</span></div>`;
+
+    if(d.wakeTime) html+=`<div style="font-size:0.75rem;color:var(--muted);margin-bottom:10px">🌅 Woke at ${d.wakeTime}${d.wakeMood?' — '+d.wakeMood:''}</div>`;
+
+    if(sessions.length) {
+      html += sessions.map(s=>`
+        <div class="session-item ${catColor[s.category]||'other'}" style="margin-bottom:8px">
+          <div class="session-top">
+            <div>
+              <div class="session-label">${catLabel[s.category]}${s.startTime?' · '+s.startTime:''}</div>
+              <div class="session-title">${s.title}</div>
+              <div class="session-detail">
+                <span class="session-duration">${s.duration}min</span>
+                ${s.focus?` &nbsp;·&nbsp; Focus ${s.focus}/10`:''}
+                ${s.notes?` &nbsp;·&nbsp; ${s.notes}`:''}
+              </div>
+              ${s.learning?`<div class="session-learning">💡 ${s.learning}</div>`:''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    if(targets.length) {
+      const doneTargets = targets.filter(t=>t.done);
+      if(doneTargets.length) {
+        html += doneTargets.map(t=>`
+          <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--bg2);border-radius:8px;margin-bottom:6px;border-left:3px solid var(--accent2)">
+            <div style="color:var(--accent2);font-size:0.85rem">✓</div>
+            <div>
+              <div style="font-size:0.82rem;font-weight:500">${t.name}</div>
+              <div style="font-size:0.68rem;color:var(--muted)">${t.timeTaken?'Took '+t.timeTaken+'min':''} ${t.doneAt?'· Done at '+t.doneAt:''}</div>
+              ${t.learning?`<div style="font-size:0.73rem;color:var(--accent2);font-style:italic;margin-top:3px">💡 ${t.learning}</div>`:''}
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    html += '</div>';
+  }
+  content.innerHTML = html || '<div class="empty"><div class="empty-icon">📅</div>No matching sessions.</div>';
+}
+
+// ── STATS PAGE ──
+function renderStats() {
+  const allSessions = Object.values(state.days).flatMap(d=>d.sessions||[]);
+  const allTargets = Object.values(state.days).flatMap(d=>d.targets||[]);
+  const totalDays = Object.keys(state.days).length;
+
+  const studyMins = allSessions.filter(s=>s.category==='study'||s.category==='exercise').reduce((a,b)=>a+b.duration,0);
+  const totalMins = allSessions.reduce((a,b)=>a+b.duration,0);
+  const doneTasks = allTargets.filter(t=>t.done).length;
+  const avgFocus = allSessions.filter(s=>s.focus).length
+    ? (allSessions.filter(s=>s.focus).reduce((a,b)=>a+(b.focus||0),0)/allSessions.filter(s=>s.focus).length).toFixed(1)
+    : '—';
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-icon">⏱️</div><div class="stat-val">${(studyMins/60).toFixed(1)}h</div><div class="stat-label">Total Study Time</div></div>
+    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-val">${doneTasks}</div><div class="stat-label">Targets Completed</div></div>
+    <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-val">${totalDays}</div><div class="stat-label">Days Tracked</div></div>
+    <div class="stat-card"><div class="stat-icon">🔥</div><div class="stat-val">${calcStreak()}</div><div class="stat-label">Day Streak</div></div>
+    <div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-val">${avgFocus}</div><div class="stat-label">Avg Focus Score</div></div>
+    <div class="stat-card"><div class="stat-icon">📝</div><div class="stat-val">${allSessions.length}</div><div class="stat-label">Total Sessions</div></div>
+  `;
+
+  // Heatmap
+  const hm = document.getElementById('heatmap');
+  const labels = document.getElementById('heatmapLabels');
+  const days = ['S','M','T','W','T','F','S'];
+  labels.innerHTML = days.map(d=>`<div style="font-size:0.62rem;color:var(--muted);text-align:center">${d}</div>`).join('');
+
+  hm.innerHTML = '';
+  for(let i=48;i>=0;i--) {
+    const dt = new Date(); dt.setDate(dt.getDate()-i);
+    const key = dt.toISOString().split('T')[0];
+    const d = state.days[key];
+    const mins = d ? (d.sessions||[]).reduce((a,b)=>a+b.duration,0) : 0;
+    const intensity = mins===0?0:mins<60?0.2:mins<120?0.5:mins<180?0.75:1;
+    const cell = document.createElement('div');
+    cell.className = 'hm-cell';
+    cell.style.background = intensity===0?'var(--bg2)':`rgba(196,119,58,${intensity})`;
+    cell.title = `${dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})}: ${Math.round(mins/60*10)/10}h`;
+    hm.appendChild(cell);
+  }
+
+  // Subject breakdown
+  const bySubject = {};
+  allSessions.forEach(s=>{ bySubject[s.category]=(bySubject[s.category]||0)+s.duration; });
+  const total = Object.values(bySubject).reduce((a,b)=>a+b,0)||1;
+  const colors = {study:'var(--accent)',break:'var(--accent2)',leisure:'var(--accent3)',exercise:'#e07b54',other:'var(--muted)'};
+  const icons = {study:'📚',break:'☕',leisure:'🎮',exercise:'🏃',other:'✨'};
+  document.getElementById('subjectBreakdown').innerHTML = Object.entries(bySubject).sort((a,b)=>b[1]-a[1]).map(([cat,mins])=>`
+    <div style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:6px">
+        <span>${icons[cat]||'✨'} ${cat.charAt(0).toUpperCase()+cat.slice(1)}</span>
+        <span style="color:var(--muted)">${(mins/60).toFixed(1)}h</span>
+      </div>
+      <div style="height:6px;background:var(--bg2);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${Math.round(mins/total*100)}%;background:${colors[cat]||'var(--muted)'};border-radius:3px;transition:width 1s"></div>
+      </div>
+    </div>
+  `).join('') || '<div style="color:var(--muted);font-size:0.78rem">No sessions logged yet.</div>';
+}
+
+function calcStreak() {
+  let streak=0; const today=new Date();
+  for(let i=0;;i++) {
+    const dt=new Date(today); dt.setDate(dt.getDate()-i);
+    const key=dt.toISOString().split('T')[0];
+    if(state.days[key]&&((state.days[key].sessions||[]).length>0||(state.days[key].targets||[]).length>0)) streak++;
+    else break;
+  }
+  return streak;
+}
+
+// ── NAV ──
+function showPage(page, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(page==='history') renderHistory();
+  if(page==='stats') renderStats();
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ── CLOSE MODALS ON CLICK OUTSIDE ──
+['logModal','completeModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click', e=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove('open'); });
+});
+
+// ── INIT ──
+if(state.user) bootApp();
+</script>
+</body>
+</html>
