@@ -1,7 +1,7 @@
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''
 
 // gemini-2.0-flash: fast, cheap, supports images (multimodal)
-const MODEL = 'gemini-2.0-flash'
+const MODEL = 'gemini-1.5-flash'
 const BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`
 
 /**
